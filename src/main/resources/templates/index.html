@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>BTC Trend</title>
+    <link rel="stylesheet" type="text/css" th:href="@{/css/style.css}" href="../static/css/style.css">
+	<link rel="stylesheet" th:href="@{/css/bootstrap.css}" href="../static/css/bootstrap.css">
+	<script src="/static/js/jquery-3.3.1.min.js" th:src="@{js/jquery-3.3.1.min.js}" ></script>
+	<script src="/static/js/bootstrap.min.js" th:src="@{js/bootstrap.min.js}"></script>
+	<script src="/static/js/Chart.min.js" th:src="@{js/Chart.min.js}"></script>
+</head>
+<script type="text/javascript">
+	var chart;
+	var ctx;
+	var canvas;
+    function getData(e) {
+        e.preventDefault();
+        var date = $("#datePicker").val();
+        var currencies = $("select[name='currency']").val();
+        var granularity = $("select[name='granularity']").val();
+        if(date !="")
+		{
+			createAjaxRequest(currencies,date,granularity);
+		}
+		else console.log("mama");
+
+    }
+    function createAjaxRequest(currencies,date,granularity)
+	{
+        $.ajax(
+            {
+                type:"POST",
+                url:"/chart",
+                dataType:"json",
+                data:{
+                    "currencies":currencies,
+                    "startDate":date,
+					"granularity":granularity
+                },
+                success: function (data) {
+                   createOrUpadateChart(data);
+
+                }
+            }
+        )
+	}
+
+	function createOrUpadateChart(newData)
+	{
+        var datas = [];
+        var times = [];
+        var datasets = [];
+        $.each(newData,function(currency, value){
+            times = [];
+            datas = [];
+            $.each(value, function(time, average)
+			{
+			    datas.push(parseFloat(average));
+			    times.push(time.substring(0,10));
+			})
+            var dataset = {
+                label: currency,
+				data: datas
+            };
+			datasets.push(dataset);
+			console.log(datasets);
+        });
+		ctx.clearRect(0,0,canvas.width,canvas.height)
+        chart = new Chart(ctx,{
+            type:"line",
+            data: {
+                labels: times,
+                datasets: datasets
+            },
+            options: {
+                scales: {
+                    xAxes: [{
+                        type: 'category',
+                        labels: times
+                    }],
+					yAxes:[{
+                        display:true,
+						type: 'logarithmic',
+						ticks: {
+                            callback: function(value,index,values) {
+								return Number(value).toLocaleString()
+                            }
+						}
+					}]
+                }
+            }
+        });
+
+	}
+
+	function main(){
+		ctx = $("#chart")[0].getContext("2d");
+		canvas = $("#chart");
+        var date = new Date();
+        var day = date.getDate();
+        var month = date.getMonth()+1;
+        var year = date.getFullYear();
+        day = day<10? '0'+day : day;
+        month = month<10? '0'+month : month;
+        date = year+'-'+month+'-'+day;
+        $("#datePicker").attr("max",date);
+        $("input[name='beginFormSubmit']").click(getData);
+	};
+
+</script>
+<body onload="main();">
+    <header><h1 class="center">Crypthocurrencies comparision</h1></header>
+    <article>
+    	<div class="center">Set time and currencies</div>
+    	<form method="post" action="#">
+			<div class="col-md-6 offset-3">
+    			<label for="datePicker" class="offset-5">Set starting date</label>
+    			<input id="datePicker" type="date" name="date">
+			</div>
+			<div class="col-md-6 offset-5">
+				<label for="currency" >Set currencies</label>
+				<select multiple id="currency" name="currency">
+					<option selected="selected" value="BTCUSD">BTCUSD</option>
+					<option value="ETHUSD">ETHUSD</option>
+					<option value="LTCUSD">LTCUSD</option>
+				</select>
+			</div>
+			<div class="col-md-6 offset-5">
+				<label for="granularity">Set granularity</label>
+				<select name="granularity" id="granularity">
+					<option value="monthly">Monthly</option>
+					<option value="weekly">Weekly</option>
+					<option value="daily">Daily</option>
+				</select>
+			</div>
+    		<input type="button" name="beginFormSubmit" value="Create chart">
+    	</form>
+		<div class="col-md-8 offset-2">
+			<canvas id="chart" class="col-md"></canvas>
+		</div>
+    </article>
+</body>
+</html>

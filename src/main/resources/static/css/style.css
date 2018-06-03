@@ -1,0 +1,26 @@
+header{
+	width: 100%;
+	margin: 0 auto;
+	font-size: large;
+}
+.center
+{
+	text-align: center;
+}
+article
+{
+	width: 100%;
+	display: block;
+}
+form
+{
+	width: 80%;
+	display: block;
+	margin:0 auto;
+}
+form input,select,label
+{
+	display: block;
+	margin: 20px auto;
+	text-align: center;
+}
